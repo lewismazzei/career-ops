@@ -607,16 +607,19 @@ export function formatScanHistoryRow(offer, date, status = 'added') {
   ].map(sanitizeTsvField).join('\t');
 }
 
-// Standard skeleton created on fresh install — matches the format documented
-// in modes/pipeline.md and expected by /career-ops pipeline.
-const PIPELINE_SKELETON = `# Pipeline — Pending URLs
+function pipelineSkeleton() {
+  const scytheScan = process.env.SCYTHE_SCAN === '1';
+  const command = scytheScan ? '/scythe pipeline' : '/career-ops pipeline';
+  const noun = scytheScan ? 'opportunity URLs' : 'job URLs';
+  return `# Pipeline — Pending URLs
 
-Paste job URLs below as \`- [ ] {url}\` then run \`/career-ops pipeline\`.
+Paste ${noun} below as \`- [ ] {url}\` then run \`${command}\`.
 
 ## Pending
 
 ## Processed
 `;
+}
 
 // Current section names (English). Legacy Spanish names are checked as fallback
 // so existing pipeline.md files created before this change keep working.
@@ -628,7 +631,7 @@ export function appendToPipeline(offers) {
 
   // Auto-create with standard skeleton if missing (fresh-install guard).
   if (!existsSync(PIPELINE_PATH)) {
-    writeFileSync(PIPELINE_PATH, PIPELINE_SKELETON, 'utf-8');
+    writeFileSync(PIPELINE_PATH, pipelineSkeleton(), 'utf-8');
   }
 
   let text = readFileSync(PIPELINE_PATH, 'utf-8');
@@ -1224,8 +1227,9 @@ async function main() {
     }
   }
 
-  console.log(`\n→ Run /career-ops pipeline to evaluate new offers.`);
-  console.log('→ Share results and get help: https://discord.gg/8pRpHETxa4');
+  const scytheScan = process.env.SCYTHE_SCAN === '1';
+  console.log(`\n→ Run ${scytheScan ? '/scythe pipeline' : '/career-ops pipeline'} to evaluate new offers.`);
+  if (!scytheScan) console.log('→ Share results and get help: https://discord.gg/8pRpHETxa4');
 }
 
 // Only run main() when invoked directly (`node scan.mjs`), not when imported by tests.

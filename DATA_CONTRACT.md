@@ -10,6 +10,7 @@ These files contain your personal data, customizations, and work product. Update
 |------|---------|
 | `cv.md` | Your CV in markdown |
 | `config/profile.yml` | Your identity, targets, comp range |
+| `config/scythe.yml` | Your private Scythe targeting, remote-work policy, proof-point references, and pilot preferences |
 | `modes/_profile.md` | Your archetypes, narrative, negotiation scripts |
 | `modes/_custom.md` | Your house rules, custom workflows & output preferences (procedural — survives updates) |
 | `voice-dna.md` | Your writing voice guardrail — banned words, anti-AI-slop rules, tone (optional) |
@@ -22,6 +23,11 @@ These files contain your personal data, customizations, and work product. Update
 | `plugins.local/` | Your own / private plugins (never auto-updated) |
 | `plugins.lock` | Integrity pins + recorded consent for your enabled plugins (generated; never auto-updated) |
 | `data/applications.md` | Your application tracker (source of truth) |
+| `data/opportunities.md` | Your Scythe opportunity tracker |
+| `data/saved.md` | Your saved Scythe opportunities, future targets, and aspirational JDs |
+| `data/targets.md` | Your outbound target list |
+| `data/conversations.md` | Your qualified-conversation and follow-up state |
+| `data/scythe-*` | Additional Scythe private data exports or working files |
 | `data/applications.db` | Derived query index over `applications.md` (SQLite, rebuilt by `node tracker.mjs sync` — safe to delete) |
 | `data/pipeline.md` | Your URL inbox |
 | `data/scan-history.tsv` | Your scan history |
@@ -29,6 +35,7 @@ These files contain your personal data, customizations, and work product. Update
 | `writing-samples/*` | Your personal writing samples for style calibration (except `writing-samples/README.md`, which is system-owned documentation delivered by updates) |
 | `reports/*` | Your evaluation reports |
 | `output/*` | Your generated PDFs |
+| `briefs/*` | Your generated outbound diagnostic briefs |
 | `jds/*` | Your saved job descriptions |
 
 ## System Layer (safe to auto-update)
@@ -56,6 +63,13 @@ These files contain system logic, scripts, templates, and instructions that impr
 | `modes/training.md` | Training evaluation instructions |
 | `modes/patterns.md` | Pattern analysis instructions |
 | `modes/followup.md` | Follow-up cadence instructions |
+| `modes/scythe.md` | Scythe discovery mode |
+| `modes/opportunity.md` | Scythe paid-work opportunity evaluation mode |
+| `modes/target-brief.md` | Scythe outbound diagnostic brief mode |
+| `modes/v0-launch.md` | Scythe idea-to-first-real-customer mode |
+| `modes/scythe-pipeline.md` | Scythe opportunity inbox processing mode |
+| `modes/scythe-tracker.md` | Scythe opportunity state review mode |
+| `modes/contract-source.md` | Scythe contract-first sourcing mode |
 | `modes/interview/*` | Interview prep planning, practice, and debrief skills |
 | `modes/de/*` | German language modes |
 | `modes/fr/*` | French language modes |
@@ -78,6 +92,8 @@ These files contain system logic, scripts, templates, and instructions that impr
 | `batch/batch-runner.sh` | Batch orchestrator |
 | `dashboard/*` | Go TUI dashboard |
 | `templates/*` | Base templates |
+| `SCYTHE.md` | Scythe pilot brief and operating loop |
+| `scythe-web/*` | Minimal private Scythe dashboard source |
 | `fonts/*` | Self-hosted fonts |
 | `.claude/skills/*` | Skill definitions (Claude Code) |
 | `.opencode/skills/*` | Skill definitions (OpenCode) |

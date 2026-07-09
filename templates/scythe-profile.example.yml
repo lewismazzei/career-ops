@@ -1,0 +1,66 @@
+# Scythe profile configuration.
+# Copy to config/scythe.yml and fill locally. Do not commit config/scythe.yml.
+
+objective: "paid remote work acquisition"
+
+remote_policy:
+  execution_required: true
+  timezone_overlap: "negotiable"
+  travel: "exceptional only"
+  reject_regular_onsite: false # first pass classifies rather than hard-rejects
+
+work_hierarchy:
+  - id: fast-paid-remote
+    label: "Fast paid remote work"
+    priority: 1
+  - id: software-contract
+    label: "Software-adjacent contract work"
+    priority: 2
+  - id: agent-leveraged-knowledge-work
+    label: "Agent-leveraged knowledge work in any domain"
+    priority: 3
+  - id: v0-launch
+    label: "Idea to first real customer"
+    priority: 4
+  - id: generic-remote
+    label: "Generic remote work when economics or strategy justify it"
+    priority: 5
+
+pilot:
+  window_days: 14
+  primary_metric: "qualified paid-work conversations"
+  priority: "time to cash"
+  manual_send_only: true
+  pre_contact_research_minutes: 25
+
+qualification:
+  qualified_conversation:
+    - "plausible paid need"
+    - "authority or influence"
+    - "remote compatibility"
+    - "concrete next step"
+
+proof_points:
+  # Keep real proof in local user-layer files: cv.md, article-digest.md, config/profile.yml, or modes/_profile.md.
+  # Examples:
+  # - id: project-bootstrap
+  #   summary: "..."
+  #   source: "article-digest.md"
+  # - id: automation-result
+  #   summary: "..."
+  #   source: "cv.md"
+
+economics:
+  classify_only_first_pass: true
+  prefer:
+    - "small fixed deliverable"
+    - "paid trial task"
+    - "hourly or day contract"
+    - "implementation-included audit"
+    - "2-4 week sprint"
+    - "fixed-scope project"
+    - "retainer or repeat work"
+  flag:
+    - "equity-only"
+    - "unpaid"
+    - "low-paid generic work"

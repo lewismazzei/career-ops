@@ -2,6 +2,13 @@
 cv.md
 data/applications.md
 data/applications.db
+data/opportunities.md
+data/saved.md
+data/targets.md
+data/conversations.md
+data/scythe-*.md
+data/scythe-*.tsv
+data/scythe-*.json
 data/follow-ups.md
 data/pipeline.md
 data/scan-history.tsv
@@ -12,11 +19,16 @@ data/parser-output/**/*.json
 !data/parser-output/**/.gitkeep
 data/cache/ats-companies/
 reports/*.md
+reports/*.png
 !reports/.gitkeep
 output/*
 !output/.gitkeep
+briefs/*
+!briefs/.gitkeep
 batch/logs/*
 !batch/logs/.gitkeep
+logs/*
+!logs/.gitkeep
 batch/batch-state.tsv
 batch/batch-input.tsv
 batch/tracker-additions/**/*.tsv
@@ -49,6 +61,7 @@ writing-samples/*
 
 # User config and customization (never auto-updated)
 config/profile.yml
+config/scythe.yml
 portals.yml
 modes/_profile.md
 modes/_custom.md
@@ -67,6 +80,7 @@ plugins.lock
 **/.env.local
 **/.env*.local
 **/*.tsbuildinfo
+**/.next/
 
 # Generated
 .resolved-prompt-*
@@ -95,6 +109,7 @@ career-dashboard
 career-dashboard.exe
 package-lock.json
 !web/package-lock.json
+!scythe-web/package-lock.json
 
 # Playwright MCP server run artifacts (ephemeral, machine-local)
 .playwright-mcp/

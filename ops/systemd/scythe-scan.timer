@@ -1,0 +1,14 @@
+[Unit]
+Description=Run Scythe scheduled scan four times daily
+
+[Timer]
+OnCalendar=*-*-* 06:17:00
+OnCalendar=*-*-* 12:17:00
+OnCalendar=*-*-* 18:17:00
+OnCalendar=*-*-* 23:17:00
+RandomizedDelaySec=15min
+Persistent=true
+Unit=scythe-scan.service
+
+[Install]
+WantedBy=timers.target

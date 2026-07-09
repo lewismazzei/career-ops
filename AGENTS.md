@@ -1,5 +1,11 @@
 # Career-Ops -- AI Job Search Pipeline
 
+## Scythe Pilot Fork
+
+This checkout is the `pilot` branch for Scythe: a private-first remote paid-work acquisition system forked from Career-Ops. Career-Ops remains the upstream base; Scythe adds modes for evaluating any remote paid-work opportunity, producing outbound diagnostic briefs, and assessing idea-to-first-real-customer work.
+
+When the user asks for Scythe, read `SCYTHE.md` and route through `.agents/skills/scythe/SKILL.md`. Keep personal profile data, opportunity lists, target lists, generated briefs, and outreach drafts in the user layer and out of Git.
+
 ## Origin
 
 This system was built and used by [santifer](https://santifer.io) to evaluate 740+ job offers, generate 100+ tailored CVs, and land a Head of Applied AI role. The archetypes, scoring logic, negotiation scripts, and proof point structure all reflect his specific career search in AI/automation roles.

@@ -1,0 +1,63 @@
+# Scythe scanner configuration starter.
+# Copy selected sections into portals.yml and tune locally.
+
+title_filter:
+  positive:
+    - "contract"
+    - "contractor"
+    - "freelance"
+    - "fractional"
+    - "consultant"
+    - "consulting"
+    - "interim"
+    - "founding"
+    - "founder"
+    - "MVP"
+    - "prototype"
+    - "automation"
+    - "internal tools"
+    - "operations"
+    - "AI"
+    - "agent"
+    - "research"
+    - "technical writer"
+    - "documentation"
+    - "product"
+    - "software"
+  negative:
+    - "onsite"
+    - "on-site"
+    - "hybrid"
+    - "relocation required"
+    - "unpaid internship"
+
+location_filter:
+  allow:
+    - "Remote"
+    - "Worldwide"
+    - "Global"
+    - "Anywhere"
+    - "UK"
+    - "Europe"
+    - "EMEA"
+  block:
+    - "onsite"
+    - "on-site"
+    - "hybrid"
+
+search_queries:
+  - name: Remote contract automation
+    query: '"contract" OR "freelance" "automation" "remote"'
+    enabled: true
+  - name: Remote internal tools contractor
+    query: '"internal tools" "contract" OR "contractor" "remote"'
+    enabled: true
+  - name: Remote AI workflow consultant
+    query: '"AI workflow" OR "AI automation" "consultant" "remote"'
+    enabled: true
+  - name: Founder MVP remote
+    query: '"MVP" OR "prototype" "founder" "remote" "contract"'
+    enabled: true
+  - name: Fractional technical operator
+    query: '"fractional" "technical" "operator" OR "builder" "remote"'
+    enabled: true

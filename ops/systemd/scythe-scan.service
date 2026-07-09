@@ -1,0 +1,17 @@
+[Unit]
+Description=Scythe scheduled scan and dashboard update
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=lewis
+Group=lewis
+WorkingDirectory=/home/lewis/projects/scythe
+Environment=HOME=/home/lewis
+Environment=PATH=/home/lewis/.nvm/versions/node/v24.15.0/bin:/usr/local/bin:/usr/bin:/bin
+TimeoutStartSec=45min
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+ExecStart=/home/lewis/.nvm/versions/node/v24.15.0/bin/npm run scythe:scheduled

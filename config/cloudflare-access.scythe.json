@@ -1,0 +1,45 @@
+{
+  "domain": "scythe.work",
+  "applicationName": "Scythe",
+  "allowedEmailDomain": "mazzei.dev",
+  "sessionDuration": "24h",
+  "organization": {
+    "name": "Scythe",
+    "authDomain": "scythe-work.cloudflareaccess.com",
+    "loginDesign": {
+      "backgroundColor": "#f5f3ed",
+      "textColor": "#151a17",
+      "headerText": "SCYTHE",
+      "footerText": "REMOTE PAID WORK OPERATIONS"
+    }
+  },
+  "cookies": {
+    "sameSite": "lax",
+    "binding": true,
+    "httpOnly": true
+  },
+  "identityProvider": {
+    "name": "One-time PIN login",
+    "type": "onetimepin"
+  },
+  "policy": {
+    "requireCloudflareAccountMember": false
+  },
+  "serviceToken": {
+    "name": "scythe-agent-verify",
+    "duration": "8760h",
+    "secretRefs": {
+      "clientId": "cloudflare/scythe/access-service-client-id",
+      "clientSecret": "cloudflare/scythe/access-service-client-secret"
+    }
+  },
+  "hosting": {
+    "provider": "cloudflare-workers",
+    "workerName": "scythe",
+    "customDomainManagedBy": "scythe-web/wrangler.jsonc"
+  },
+  "dns": {
+    "managedBy": "cloudflare-workers-custom-domain",
+    "records": []
+  }
+}

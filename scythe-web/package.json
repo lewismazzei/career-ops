@@ -1,0 +1,32 @@
+{
+  "name": "@scythe/work",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Minimal private dashboard for Scythe remote paid-work acquisition.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "preview": "npm run build && wrangler dev",
+    "deploy": "npm run build && wrangler deploy",
+    "cf:deployments": "wrangler deployments list",
+    "d1:list": "wrangler d1 list",
+    "d1:migrate": "wrangler d1 migrations apply scythe --remote",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "geist": "^1.7.0",
+    "next": "^16.2.10",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^6.0.2",
+    "wrangler": "^4.109.0"
+  },
+  "overrides": {
+    "postcss": "8.5.10"
+  }
+}

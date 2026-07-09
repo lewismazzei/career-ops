@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "project": "scythe",
+  "client": "lewis",
+  "repository": "/home/lewis/projects/scythe",
+  "defaultEnvironment": "production",
+  "environments": {
+    "production": {
+      "secrets": {
+        "provider": "manual",
+        "namespace": "lewis/scythe/production",
+        "injection": "direnv"
+      },
+      "urls": {
+        "app": "https://scythe.work"
+      },
+      "notes": "Cloudflare API token is not stored here. Provide it through CLOUDFLARE_API_TOKEN or a secrets broker."
+    }
+  },
+  "services": {
+    "cloudflare": {
+      "preferredSurface": "api",
+      "dashboardUrls": {
+        "apiTokens": "https://dash.cloudflare.com/profile/api-tokens",
+        "zeroTrust": "https://one.dash.cloudflare.com/",
+        "zoneOverview": "https://dash.cloudflare.com/"
+      },
+      "credentials": [
+        {
+          "name": "scythe-cloudflare-access-admin",
+          "kind": "api-token",
+          "purpose": "Deploy the Scythe Worker, attach the scythe.work custom domain, and manage Access identity providers and application/policies.",
+          "secretRef": "pass://cloudflare/scythe/access-admin-token",
+          "envVar": "CLOUDFLARE_API_TOKEN",
+          "scopes": [
+            "Account:Account Settings Read",
+            "Account:Workers Scripts Edit",
+            "Account:D1 Edit",
+            "Zone:Workers Routes Edit",
+            "Zone:Zone Read",
+            "Zone:DNS Write",
+            "Account:Access Apps and Policies Write",
+            "Account:Access Service Tokens Write",
+            "Account:Access Organizations, Identity Providers, and Groups Write",
+            "User:User Details Read",
+            "User:Memberships Read"
+          ],
+          "rotation": "manual until a secrets broker is selected"
+        },
+        {
+          "name": "scythe-agent-verify",
+          "kind": "access-service-token",
+          "purpose": "Let Codex verify the protected Scythe site without browser OTP or mailbox access.",
+          "secretRef": "pass://cloudflare/scythe/access-service-client-secret",
+          "clientIdRef": "pass://cloudflare/scythe/access-service-client-id",
+          "envVars": [
+            "CF_ACCESS_CLIENT_ID",
+            "CF_ACCESS_CLIENT_SECRET"
+          ],
+          "rotation": "annual unless revoked earlier"
+        }
+      ],
+      "notes": "Cloudflare owns hosting, custom domain routing, DNS, and Access for scythe.work. One scoped token should be enough for routine agent operation after the zone is active."
+    },
+    "vercel": {
+      "preferredSurface": "legacy",
+      "dashboardUrls": {
+        "project": "https://vercel.com/lewismazzei/scythe",
+        "domains": "https://vercel.com/lewismazzei/scythe/settings/domains"
+      },
+      "notes": "Deprecated for Scythe. Do not deploy new production state here."
+    }
+  },
+  "otpPolicy": {
+    "mode": "human-only",
+    "notes": "Do not give Codex broad inbox access. Cloudflare Access should use Cloudflare account login or another IdP rather than agent-read email OTP."
+  }
+}
