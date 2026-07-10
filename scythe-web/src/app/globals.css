@@ -7,7 +7,7 @@
   --text: #151a17;
   --muted: #606a62;
   --faint: #7a837b;
-  --accent: #2f7d68;
+  --accent: #a6532f;
   --accent-soft: color-mix(in srgb, var(--accent) 12%, transparent);
   --warn: #a05a21;
   --shadow: 0 18px 60px -46px rgba(21, 26, 23, 0.45);
