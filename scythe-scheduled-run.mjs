@@ -177,6 +177,7 @@ async function main() {
     ok: false,
     dryRun: options.dryRun,
     startedAt,
+    scanFinishedAt: null,
     finishedAt: null,
     durationMs: null,
     logPath,
@@ -197,8 +198,13 @@ async function main() {
     status.steps.push({ name: scan.name, ok: scan.ok, code: scan.code, startedAt: scan.startedAt, finishedAt: scan.finishedAt });
     status.summary = parseScanSummary(scan.output);
     status.pendingPipelineCount = readPendingPipelineCount();
+    status.scanFinishedAt = scan.finishedAt;
 
     if (!scan.ok) throw new Error("scan failed");
+    status.state = options.dryRun ? "dry-run-scan-ok" : "scan-ok";
+    status.ok = true;
+    status.durationMs = new Date(scan.finishedAt).getTime() - new Date(scan.startedAt).getTime();
+    writeStatus(status);
 
     if (!options.dryRun && !options.skipDeploy) {
       const deploy = await runStep({ name: "deploy", command: "npm", args: ["run", "scythe:web:deploy"], env, logPath });

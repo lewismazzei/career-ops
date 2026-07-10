@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function Home() {
   const data = readDashboardData();
-  const queueUpdatedAt = data.scheduler?.finishedAt ?? data.lastUpdated;
+  const queueUpdatedAt = data.scheduler?.scanFinishedAt ?? data.scheduler?.finishedAt ?? data.lastUpdated;
 
   return (
     <main className="shell">

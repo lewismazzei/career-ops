@@ -64,6 +64,7 @@ export type SchedulerStatus = {
   ok: boolean;
   dryRun: boolean;
   startedAt: string;
+  scanFinishedAt?: string | null;
   finishedAt: string | null;
   durationMs: number | null;
   logPath: string;

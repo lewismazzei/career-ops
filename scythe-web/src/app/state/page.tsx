@@ -8,13 +8,14 @@ export const metadata: Metadata = {
 
 export default function StatePage() {
   const data = readDashboardData();
+  const scanRanAt = data.scheduler?.scanFinishedAt ?? data.scheduler?.finishedAt;
 
   return (
     <main className="shell">
       <ScytheHeader />
 
       <section className="panel">
-        <SectionTitle title="State" meta={data.lastUpdated ? `updated ${formatDate(data.lastUpdated)}` : "updated unknown"} />
+        <SectionTitle title="Tracker" meta={data.lastUpdated ? `updated ${formatDate(data.lastUpdated)}` : "updated unknown"} />
         <dl className="counts">
           <div>
             <dt>opportunities</dt>
@@ -40,7 +41,7 @@ export default function StatePage() {
       </section>
 
       <section className="panel lower">
-        <SectionTitle title="Scan" meta={data.scheduler?.finishedAt ? `ran ${formatDate(data.scheduler.finishedAt)}` : "not run"} />
+        <SectionTitle title="Scan" meta={scanRanAt ? `ran ${formatDate(scanRanAt)}` : "not run"} />
         <dl className="counts">
           <div>
             <dt>state</dt>
