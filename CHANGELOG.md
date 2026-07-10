@@ -1,5 +1,44 @@
 # Changelog
 
+## [1.19.0](https://github.com/santifer/career-ops/compare/career-ops-v1.18.0...career-ops-v1.19.0) (2026-07-10)
+
+
+### Features
+
+* **batch:** apply compensation reliability checks to batch workers ([#1588](https://github.com/santifer/career-ops/issues/1588)) ([d6cbb2a](https://github.com/santifer/career-ops/commit/d6cbb2a126ef3e9361cb8ff331413df7db8ebd58))
+* **cv:** fact validator — block invented metrics in generated CVs ([#682](https://github.com/santifer/career-ops/issues/682)) ([b9decee](https://github.com/santifer/career-ops/commit/b9decee90eb00140b89912681deb34d7ecf48f94))
+* **i18n:** Chinese salary reliability checks — zh mirror of the compensation tiers ([#1589](https://github.com/santifer/career-ops/issues/1589)) ([5771478](https://github.com/santifer/career-ops/commit/5771478c808435fff1ec0666bc0245dc7213d162))
+* **invite-match:** fuzzy-match interview-invite emails to tracker entries ([#1495](https://github.com/santifer/career-ops/issues/1495)) ([10de9d4](https://github.com/santifer/career-ops/commit/10de9d4ab48130d7c794028f00604ae8b9f56223))
+* language.output preference — output language decoupled from market modes ([#1035](https://github.com/santifer/career-ops/issues/1035)) ([4f512fb](https://github.com/santifer/career-ops/commit/4f512fbdfa67057d7c06a37437a67f6f55428d45))
+* **latex:** opt-in latex-tex in-place tailoring of user-owned .tex CVs ([#695](https://github.com/santifer/career-ops/issues/695)) ([d7128ad](https://github.com/santifer/career-ops/commit/d7128adfc877c39a82bc0f8edef83b4a5bc0bc0c))
+* make CLAUDE.md a thin @AGENTS.md wrapper — single canonical agent spec ([#272](https://github.com/santifer/career-ops/issues/272)) ([09528a3](https://github.com/santifer/career-ops/commit/09528a34c46a9914a255489729bdc79b0940ae9b))
+* **oferta:** company-type + compensation-reliability tiers in evaluations ([#1587](https://github.com/santifer/career-ops/issues/1587)) ([160093c](https://github.com/santifer/career-ops/commit/160093cbcc4b44cc22af34160a17422bd58a88b5))
+* **providers:** 4dayweek auto-detect with spoof-safe host matching ([#1657](https://github.com/santifer/career-ops/issues/1657) follow-up) ([333d620](https://github.com/santifer/career-ops/commit/333d6203f770efcd52c5a7cf05ce5d5cb0811337))
+* **providers:** add LaraJobs zero-auth RSS provider ([0f046b5](https://github.com/santifer/career-ops/commit/0f046b5bd7f24a7ec13ba4a027183ca765d869ca))
+* **providers:** add Tencent careers zero-auth provider ([#230](https://github.com/santifer/career-ops/issues/230)) ([95ba35c](https://github.com/santifer/career-ops/commit/95ba35cfe3f7b6163959d21a493ba156bf524536))
+* **registry:** register serper and theirstack provider plugins ([#1645](https://github.com/santifer/career-ops/issues/1645), [#1697](https://github.com/santifer/career-ops/issues/1697)) ([2958a2c](https://github.com/santifer/career-ops/commit/2958a2c4b8d3c851758728b6e17e5b739d077c09))
+* **registry:** split plugins-registry.json into per-plugin files ([#1401](https://github.com/santifer/career-ops/issues/1401)) ([6d08316](https://github.com/santifer/career-ops/commit/6d08316722f96af88f74959992d8bbab8c1d4228))
+* **scan:** opt-in max_posting_age_days freshness gate ([#1578](https://github.com/santifer/career-ops/issues/1578)) ([8b60a8c](https://github.com/santifer/career-ops/commit/8b60a8cfbe487ce0254432695bab1c2989041df9))
+* **scan:** persist provider postedAt to pipeline and scan-history ([#1578](https://github.com/santifer/career-ops/issues/1578)) ([300b6cb](https://github.com/santifer/career-ops/commit/300b6cb613aff388eea632960c3d15110ee9411b))
+* **scan:** suppress duplicate roles via company aliases ([#1750](https://github.com/santifer/career-ops/issues/1750)) ([b203ea4](https://github.com/santifer/career-ops/commit/b203ea4183d78b22ca57045a9f9f94d716ef6036))
+* spend_tier config for model-agnostic model routing + batch pre-screen gate ([#1007](https://github.com/santifer/career-ops/issues/1007)) ([4dec7eb](https://github.com/santifer/career-ops/commit/4dec7eb2da549ad4712111eaece4719390efbe94))
+* **upskill:** aggregate skill-gap analysis from tracked reports ([#1520](https://github.com/santifer/career-ops/issues/1520), phase 1) ([fd1f3c9](https://github.com/santifer/career-ops/commit/fd1f3c957b4ab138850c0ceccef7c4d3a9720093))
+
+
+### Bug Fixes
+
+* **analyzer:** resolve report paths relative to the tracker file ([#1679](https://github.com/santifer/career-ops/issues/1679)) ([568025c](https://github.com/santifer/career-ops/commit/568025c4677772b0882afbce3609c30ac1a3f7e8))
+* gitignore data/active-interviews.md (user interview data) ([267dfb7](https://github.com/santifer/career-ops/commit/267dfb7079877e2beb2a949eb7b404b7bd257332))
+* ignore logo cache directory ([#1577](https://github.com/santifer/career-ops/issues/1577)) ([f51b948](https://github.com/santifer/career-ops/commit/f51b948fb9a7902d4da017840ea83e9dd1d21f6c))
+* **liveness:** treat off-posting redirects as uncertain, not active ([c1cd458](https://github.com/santifer/career-ops/commit/c1cd4586606f67aa87f263ee21bc165443851bca))
+* **pdf:** render markdown bold in CV summary as &lt;strong&gt; (ATS-safe) ([b12cf41](https://github.com/santifer/career-ops/commit/b12cf41016974d5edce45e346021b3b3861a7fde))
+* **providers:** support explicit api: override for ashby/lever with host-pinned guards ([6e010fe](https://github.com/santifer/career-ops/commit/6e010fe9613ae16fa08b6a291473128c1097af2e))
+* **tests:** close CodeQL command-injection findings in the test harness ([9cd6dbc](https://github.com/santifer/career-ops/commit/9cd6dbc0c0dc17361d0babdece2803979f183069))
+* **tests:** skip web-reader tests when web/ is absent on core-only installs ([#1675](https://github.com/santifer/career-ops/issues/1675)) ([32dde78](https://github.com/santifer/career-ops/commit/32dde7849b117f2c7c37205327af313f31dc7a5c))
+* **tracker:** detect and prevent duplicate tracker # numbers ([#1704](https://github.com/santifer/career-ops/issues/1704)) ([d9cc272](https://github.com/santifer/career-ops/commit/d9cc272c76f69cbf9708477dfadc813abc8d6e23))
+* **update-system:** add .claude/hooks/ to USER_PATHS ([#1676](https://github.com/santifer/career-ops/issues/1676)) ([e9bacc4](https://github.com/santifer/career-ops/commit/e9bacc484185f56cec210ea821bf1774e989acea))
+* **update-system:** keep the updater self-loading to survive old→new re-exec ([#1706](https://github.com/santifer/career-ops/issues/1706)) ([ce72879](https://github.com/santifer/career-ops/commit/ce7287960b3d16224f8af17ea2f5a5e5e7590543))
+
 ## [1.18.0](https://github.com/santifer/career-ops/compare/career-ops-v1.17.0...career-ops-v1.18.0) (2026-07-07)
 
 
