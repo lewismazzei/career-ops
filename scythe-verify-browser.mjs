@@ -60,7 +60,7 @@ async function verify() {
 
     if (status !== 200) throw new Error(`Expected browser status 200, got ${status}.`);
     const lowerBodyText = metrics.bodyText.toLowerCase();
-    if (!lowerBodyText.includes("queue") || !lowerBodyText.includes("saved")) {
+    if (!lowerBodyText.includes("inbox") || !lowerBodyText.includes("saved")) {
       throw new Error("Browser response did not contain expected Scythe navigation.");
     }
     if (metrics.horizontalOverflow) throw new Error("Browser viewport has horizontal overflow.");
