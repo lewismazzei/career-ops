@@ -15,7 +15,7 @@ export function ScytheHeader({ meta }: { meta?: string } = {}) {
         {meta ? <span className="header-meta">{meta}</span> : null}
       </div>
       <nav className="nav" aria-label="Scythe navigation">
-        <Link href="/">Queue</Link>
+        <Link href="/">Inbox</Link>
         <Link href="/saved">Saved</Link>
         <Link href="/state">State</Link>
       </nav>
