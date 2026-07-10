@@ -216,14 +216,11 @@ export function CandidateQueue({ items }: { items: CandidateItem[] }) {
     setPrompt({ candidate, patch, action });
   }
 
-  if (items.length === 0) return <div className="empty">No pending candidates.</div>;
+  if (items.length === 0) return <div className="empty">Inbox is empty.</div>;
 
   return (
     <section className="queue">
-      <div className="queue-meta">
-        <span>{items.length} pending</span>
-        {error ? <span>{error}</span> : null}
-      </div>
+      {error ? <div className="queue-meta"><span>{error}</span></div> : null}
       <ul className="candidate-list">
         {ranked.map(({ item, judgement, rank }) => (
           <li key={item.url} className={judgement?.vote === "down" ? "candidate muted-candidate" : "candidate"}>
