@@ -26,8 +26,8 @@ function normalizeUrl(value) {
 async function listJudgements(env, url) {
   const savedOnly = url.searchParams.get("saved") === "1";
   const statement = savedOnly
-    ? env.DB.prepare("SELECT url, vote, saved, company, opportunity, location, source, score, created_at, updated_at FROM candidate_judgements WHERE saved = 1 ORDER BY updated_at DESC LIMIT 500")
-    : env.DB.prepare("SELECT url, vote, saved, company, opportunity, location, source, score, created_at, updated_at FROM candidate_judgements ORDER BY updated_at DESC LIMIT 1000");
+    ? env.DB.prepare("SELECT url, vote, saved, reason, company, opportunity, location, source, score, created_at, updated_at FROM candidate_judgements WHERE saved = 1 ORDER BY updated_at DESC LIMIT 500")
+    : env.DB.prepare("SELECT url, vote, saved, reason, company, opportunity, location, source, score, created_at, updated_at FROM candidate_judgements ORDER BY updated_at DESC LIMIT 1000");
   const result = await statement.all();
   return json({
     judgements: (result.results || []).map((row) => ({
@@ -43,10 +43,13 @@ async function updateJudgement(request, env) {
   const hasVote = Object.prototype.hasOwnProperty.call(body, "vote");
   const hasSaved = Object.prototype.hasOwnProperty.call(body, "saved");
   if (!hasVote && !hasSaved) throw new Error("vote or saved is required");
+  const hasReason = Object.prototype.hasOwnProperty.call(body, "reason");
 
-  const existing = await env.DB.prepare("SELECT vote, saved FROM candidate_judgements WHERE url = ?").bind(url).first();
+  const existing = await env.DB.prepare("SELECT vote, saved, reason FROM candidate_judgements WHERE url = ?").bind(url).first();
   const vote = hasVote ? normalizeVote(body.vote) : (existing?.vote ?? null);
   const saved = hasSaved ? (body.saved ? 1 : 0) : (existing?.saved ? 1 : 0);
+  const reason = hasReason ? sanitizeText(body.reason, 1200) : (existing?.reason ?? "");
+  const eventReason = hasReason ? reason : null;
   const candidate = body.candidate || {};
   const company = sanitizeText(candidate.company, 160);
   const opportunity = sanitizeText(candidate.opportunity, 260);
@@ -56,30 +59,32 @@ async function updateJudgement(request, env) {
   const now = new Date().toISOString();
 
   await env.DB.prepare(`
-    INSERT INTO candidate_judgements (url, vote, saved, company, opportunity, location, source, score, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO candidate_judgements (url, vote, saved, reason, company, opportunity, location, source, score, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(url) DO UPDATE SET
       vote = excluded.vote,
       saved = excluded.saved,
+      reason = excluded.reason,
       company = excluded.company,
       opportunity = excluded.opportunity,
       location = excluded.location,
       source = excluded.source,
       score = excluded.score,
       updated_at = excluded.updated_at
-  `).bind(url, vote, saved, company, opportunity, location, source, score, now, now).run();
+  `).bind(url, vote, saved, reason, company, opportunity, location, source, score, now, now).run();
 
   const action = hasVote && hasSaved ? "vote+save" : hasVote ? "vote" : "save";
   await env.DB.prepare(`
-    INSERT INTO candidate_judgement_events (url, action, value, company, opportunity, location, source, score, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).bind(url, action, JSON.stringify({ vote, saved: Boolean(saved) }), company, opportunity, location, source, score, now).run();
+    INSERT INTO candidate_judgement_events (url, action, value, reason, company, opportunity, location, source, score, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(url, action, JSON.stringify({ vote, saved: Boolean(saved), reason: eventReason }), eventReason, company, opportunity, location, source, score, now).run();
 
   return json({
     judgement: {
       url,
       vote,
       saved: Boolean(saved),
+      reason,
       company,
       opportunity,
       location,

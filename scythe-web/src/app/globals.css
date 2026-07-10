@@ -236,6 +236,8 @@ h1 {
   gap: 14px;
   align-items: start;
   border-top: 1px solid var(--border);
+  max-block-size: 148px;
+  overflow: hidden;
   padding: 11px 0;
 }
 
@@ -252,6 +254,7 @@ h1 {
   display: grid;
   gap: 3px;
   min-width: 0;
+  overflow: hidden;
 }
 
 .candidate-main a {
@@ -268,26 +271,49 @@ h1 {
 .candidate .role,
 .candidate-meta,
 .candidate-signals {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
   min-width: 0;
+  overflow: hidden;
   overflow-wrap: anywhere;
   line-height: 1.35;
 }
 
 .candidate .company {
+  -webkit-line-clamp: 1;
   font-size: 13px;
   font-weight: 700;
 }
 
 .candidate .role {
+  -webkit-line-clamp: 2;
   color: var(--muted);
   font-size: 13px;
 }
 
 .candidate-meta,
 .candidate-signals {
+  -webkit-line-clamp: 1;
   color: var(--faint);
   font-size: 10px;
   text-transform: uppercase;
+}
+
+.candidate-side {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.candidate-score {
+  display: inline-grid;
+  place-items: center;
+  min-width: 28px;
+  color: var(--accent);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  text-align: right;
 }
 
 .candidate-actions {
@@ -319,6 +345,122 @@ h1 {
 .candidate-actions button:disabled {
   cursor: wait;
   opacity: 0.55;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(21, 26, 23, 0.42);
+}
+
+.reason-modal {
+  width: min(100%, 420px);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 14px;
+}
+
+.reason-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.reason-head h2,
+.reason-context {
+  margin: 0;
+}
+
+.reason-head h2 {
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.reason-head button,
+.reason-actions button {
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 7px 8px;
+  text-transform: uppercase;
+}
+
+.reason-head button:hover,
+.reason-actions button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.reason-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.reason-context {
+  display: grid;
+  gap: 3px;
+  margin-top: 8px;
+}
+
+.reason-context span,
+.reason-context strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
+
+.reason-context span {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.reason-context strong {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.reason-modal textarea {
+  display: block;
+  width: 100%;
+  min-height: 118px;
+  margin-top: 12px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--row);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.45;
+  padding: 10px;
+  resize: vertical;
+}
+
+.reason-modal textarea:focus {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent-soft);
+}
+
+.reason-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 10px;
 }
 
 .lower {
