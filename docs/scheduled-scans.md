@@ -42,12 +42,14 @@ npm run scythe:scheduled
 
 ## Schedule
 
-The timer runs at 06:17, 12:17, 18:17, and 23:17 server time, plus up to 15 minutes of random delay.
+The timer runs every 30 minutes exactly on the hour and half past (`:00` and `:30`) server time, with no randomized delay.
 
 Each run:
 
 1. loads brokered Cloudflare and Access credentials from `pass`
 2. runs `npm run scythe:scan -- --verify`
-3. writes scheduler status and logs
-4. deploys the Scythe static dashboard to Cloudflare
-5. verifies authenticated HTTP and browser access through Cloudflare Access
+3. writes scheduler status and logs locally
+4. deploys the Scythe static dashboard to Cloudflare only when the scan adds new offers or detects rate-limit/access-blocking/bot-challenge signals that need to be surfaced
+5. verifies authenticated HTTP and browser access through Cloudflare Access only after a deployment
+
+`data/scythe-scheduler-status.json` includes the scan summary, the publish decision, and any structured scan signals. No-op scans still refresh the local status file but skip deploy and verification.

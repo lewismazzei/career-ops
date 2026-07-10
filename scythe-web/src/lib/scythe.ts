@@ -79,6 +79,23 @@ export type SchedulerStatus = {
     noApplyDropped?: number | null;
     invalidDropped?: number | null;
   };
+  scanSignals?: Array<{
+    type: string;
+    severity: string;
+    message: string;
+    evidence: string[];
+  }>;
+  warnings?: string[];
+  publish?: {
+    required: boolean;
+    reason: string;
+    dataChanged: boolean;
+    signalsNeedSurface: boolean;
+    skipped: boolean;
+    deployed: boolean;
+    verifyAuth: boolean;
+    verifyBrowser: boolean;
+  };
   steps: Array<{
     name: string;
     ok: boolean;

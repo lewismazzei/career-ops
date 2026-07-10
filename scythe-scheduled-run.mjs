@@ -4,12 +4,14 @@ import { spawn } from "node:child_process";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 const ROOT = process.cwd();
 const LOG_DIR = "logs/scythe-scheduler";
 const STATUS_PATH = "data/scythe-scheduler-status.json";
 const LOCK_PATH = "data/scythe-scheduler.lock";
 const STALE_LOCK_MS = 3 * 60 * 60 * 1000;
+const MAX_WARNING_EVIDENCE = 5;
 
 const SECRET_REFS = {
   CLOUDFLARE_API_TOKEN: "cloudflare/scythe/access-admin-token",
@@ -125,12 +127,116 @@ function parseScanSummary(output) {
   };
 }
 
+const SCAN_SIGNAL_DETECTORS = [
+  {
+    type: "rate_limit",
+    severity: "warning",
+    patterns: [
+      /\bhttp\s*429\b/i,
+      /\b429\b.*\btoo many requests\b/i,
+      /\btoo many requests\b/i,
+      /\brate[-\s]?limit(?:ed|ing)?\b/i,
+      /\bretry-after\b/i,
+      /\bquota exceeded\b/i
+    ]
+  },
+  {
+    type: "access_blocked",
+    severity: "warning",
+    patterns: [
+      /\baccess_blocked\b/i,
+      /\baccess blocked\b/i,
+      /\bhttp\s*403\b/i,
+      /\bhttp\s*503\b/i,
+      /\b403\b.*\bforbidden\b/i,
+      /\bforbidden\b/i,
+      /\bblocked_host\b/i,
+      /\bskipped_blocked_host\b/i
+    ]
+  },
+  {
+    type: "bot_challenge",
+    severity: "warning",
+    patterns: [
+      /\bbot_challenge\b/i,
+      /\banti[-\s]?bot challenge\b/i,
+      /\bjust a moment\b/i,
+      /\bcloudflare\b.*\b(challenge|captcha|verification|checking)\b/i,
+      /\bcaptcha\b/i,
+      /\bhcaptcha\b/i,
+      /\brecaptcha\b/i,
+      /\bsecurity verification\b/i,
+      /\bverify you are (?:a |not a )?human\b/i,
+      /\bchecking your browser\b/i
+    ]
+  }
+];
+
+function cleanEvidence(line) {
+  return line.replace(/\s+/g, " ").trim();
+}
+
+function detectScanSignals(output) {
+  const lines = output.split(/\r?\n/).map(cleanEvidence).filter(Boolean);
+  const signals = [];
+
+  for (const detector of SCAN_SIGNAL_DETECTORS) {
+    const evidence = [];
+    for (const line of lines) {
+      if (detector.patterns.some((pattern) => pattern.test(line))) {
+        evidence.push(line);
+        if (evidence.length >= MAX_WARNING_EVIDENCE) break;
+      }
+    }
+
+    if (evidence.length > 0) {
+      signals.push({
+        type: detector.type,
+        severity: detector.severity,
+        message: `Scan output contains ${detector.type.replaceAll("_", " ")} signal(s)`,
+        evidence
+      });
+    }
+  }
+
+  return signals;
+}
+
+function userFacingDataChanged({ summary, dryRun }) {
+  if (dryRun) return false;
+  return (summary.newOffersAdded ?? 0) > 0;
+}
+
+function shouldPublishAfterScan({ summary, scanSignals, dryRun }) {
+  const dataChanged = userFacingDataChanged({ summary, dryRun });
+  const signalsNeedSurface = !dryRun && scanSignals.length > 0;
+
+  if (dataChanged) {
+    return { required: true, reason: "new_offers_added", dataChanged, signalsNeedSurface };
+  }
+  if (signalsNeedSurface) {
+    return { required: true, reason: "scan_warning_signals", dataChanged, signalsNeedSurface };
+  }
+  return { required: false, reason: dryRun ? "dry_run" : "no_user_facing_change", dataChanged, signalsNeedSurface };
+}
+
 function writeStatus(status) {
   fs.writeFileSync(STATUS_PATH, `${JSON.stringify(status, null, 2)}\n`, "utf8");
 }
 
 function appendLog(logPath, text) {
   fs.appendFileSync(logPath, text, "utf8");
+}
+
+function logScanSignals(logPath, signals) {
+  if (signals.length === 0) return;
+  appendLog(logPath, "\n## Scan warnings\n");
+  for (const signal of signals) {
+    const evidence = signal.evidence.length > 0 ? ` (${signal.evidence.join(" | ")})` : "";
+    const line = `WARNING: ${signal.message}${evidence}`;
+    appendLog(logPath, `${line}\n`);
+    console.warn(line);
+  }
 }
 
 function runStep({ name, command, args, env, logPath }) {
@@ -183,6 +289,18 @@ async function main() {
     logPath,
     pendingPipelineCount: readPendingPipelineCount(),
     summary: {},
+    scanSignals: [],
+    warnings: [],
+    publish: {
+      required: false,
+      reason: "not_evaluated",
+      dataChanged: false,
+      signalsNeedSurface: false,
+      skipped: false,
+      deployed: false,
+      verifyAuth: false,
+      verifyBrowser: false
+    },
     steps: []
   };
   writeStatus(status);
@@ -197,32 +315,61 @@ async function main() {
     const scan = await runStep({ name: "scan", command: "npm", args: scanArgs, env, logPath });
     status.steps.push({ name: scan.name, ok: scan.ok, code: scan.code, startedAt: scan.startedAt, finishedAt: scan.finishedAt });
     status.summary = parseScanSummary(scan.output);
+    status.scanSignals = detectScanSignals(scan.output);
+    status.warnings = status.scanSignals.map((signal) => signal.message);
+    status.publish = {
+      ...status.publish,
+      ...shouldPublishAfterScan({
+        summary: status.summary,
+        scanSignals: status.scanSignals,
+        dryRun: options.dryRun
+      })
+    };
+    logScanSignals(logPath, status.scanSignals);
     status.pendingPipelineCount = readPendingPipelineCount();
     status.scanFinishedAt = scan.finishedAt;
 
-    if (!scan.ok) throw new Error("scan failed");
-    status.state = options.dryRun ? "dry-run-scan-ok" : "scan-ok";
-    status.ok = true;
+    if (!scan.ok) {
+      status.state = "scan-failed";
+      status.ok = false;
+      status.error = "scan failed";
+    } else {
+      status.state = options.dryRun ? "dry-run-scan-ok" : "scan-ok";
+      status.ok = true;
+    }
     status.durationMs = new Date(scan.finishedAt).getTime() - new Date(scan.startedAt).getTime();
     writeStatus(status);
 
-    if (!options.dryRun && !options.skipDeploy) {
+    if (status.publish.required && !options.skipDeploy) {
       const deploy = await runStep({ name: "deploy", command: "npm", args: ["run", "scythe:web:deploy"], env, logPath });
       status.steps.push({ name: deploy.name, ok: deploy.ok, code: deploy.code, startedAt: deploy.startedAt, finishedAt: deploy.finishedAt });
+      status.publish.deployed = deploy.ok;
       if (!deploy.ok) throw new Error("deploy failed");
 
       const verifyAuth = await runStep({ name: "verify-auth", command: "npm", args: ["run", "scythe:verify:auth"], env, logPath });
       status.steps.push({ name: verifyAuth.name, ok: verifyAuth.ok, code: verifyAuth.code, startedAt: verifyAuth.startedAt, finishedAt: verifyAuth.finishedAt });
+      status.publish.verifyAuth = verifyAuth.ok;
       if (!verifyAuth.ok) throw new Error("authenticated HTTP verification failed");
 
       if (!options.skipBrowser) {
         const verifyBrowser = await runStep({ name: "verify-browser", command: "npm", args: ["run", "scythe:verify:browser"], env, logPath });
         status.steps.push({ name: verifyBrowser.name, ok: verifyBrowser.ok, code: verifyBrowser.code, startedAt: verifyBrowser.startedAt, finishedAt: verifyBrowser.finishedAt });
+        status.publish.verifyBrowser = verifyBrowser.ok;
         if (!verifyBrowser.ok) throw new Error("authenticated browser verification failed");
       }
+    } else {
+      status.publish.skipped = true;
+      if (options.skipDeploy && status.publish.required) status.publish.reason = `${status.publish.reason}_skip_deploy`;
+      appendLog(logPath, `\nDeploy skipped: ${status.publish.reason}\n`);
     }
 
-    status.state = options.dryRun ? "dry-run-ok" : "ok";
+    if (!scan.ok) throw new Error("scan failed");
+
+    if (status.scanSignals.length > 0) {
+      status.state = options.dryRun ? "dry-run-ok-with-warnings" : "ok-with-warnings";
+    } else {
+      status.state = options.dryRun ? "dry-run-ok" : "ok";
+    }
     status.ok = true;
   } catch (error) {
     status.state = "failed";
@@ -240,11 +387,22 @@ async function main() {
 
   console.log(`state=${status.state}`);
   console.log(`new_offers=${status.summary.newOffersAdded ?? "unknown"}`);
+  console.log(`scan_warnings=${status.scanSignals.length}`);
+  console.log(`publish=${status.publish.required ? status.publish.reason : "skipped"}`);
   console.log(`pending_pipeline=${status.pendingPipelineCount}`);
   console.log(`log=${logPath}`);
 }
 
-main().catch((error) => {
-  console.error(`scythe-scheduled-run: ${error.message}`);
-  process.exit(1);
-});
+if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+  main().catch((error) => {
+    console.error(`scythe-scheduled-run: ${error.message}`);
+    process.exit(1);
+  });
+}
+
+export {
+  detectScanSignals,
+  parseScanSummary,
+  shouldPublishAfterScan,
+  userFacingDataChanged
+};

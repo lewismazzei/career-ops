@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { readDashboardData } from "@/lib/scythe";
+import { readDashboardData, type SchedulerStatus } from "@/lib/scythe";
 import { ScytheHeader, SectionTitle, formatDate } from "@/components/scythe";
 
 export const metadata: Metadata = {
@@ -9,6 +9,7 @@ export const metadata: Metadata = {
 export default function StatePage() {
   const data = readDashboardData();
   const scanRanAt = data.scheduler?.scanFinishedAt ?? data.scheduler?.finishedAt;
+  const scanSignals = data.scheduler?.scanSignals ?? [];
 
   return (
     <main className="shell">
@@ -59,6 +60,14 @@ export default function StatePage() {
             <dt>duration</dt>
             <dd>{formatDuration(data.scheduler?.durationMs)}</dd>
           </div>
+          <div>
+            <dt>warnings</dt>
+            <dd>{scanSignals.length}</dd>
+          </div>
+          <div>
+            <dt>publish</dt>
+            <dd>{formatPublish(data.scheduler?.publish)}</dd>
+          </div>
           {data.scheduler?.error ? (
             <div>
               <dt>error</dt>
@@ -67,6 +76,20 @@ export default function StatePage() {
           ) : null}
         </dl>
       </section>
+
+      {scanSignals.length > 0 ? (
+        <section className="panel lower">
+          <SectionTitle title="Warnings" />
+          <ul className="signal-list">
+            {scanSignals.map((signal) => (
+              <li key={signal.type}>
+                <strong>{formatSignalType(signal.type)}</strong>
+                <span>{signal.evidence[0] ?? signal.message}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <CountSection title="Status" counts={data.statusCounts} />
       <CountSection title="Outcome" counts={data.outcomeCounts} />
@@ -82,6 +105,18 @@ function formatDuration(durationMs?: number | null): string {
   const minutes = Math.floor(seconds / 60);
   const rest = seconds % 60;
   return rest ? `${minutes}m ${rest}s` : `${minutes}m`;
+}
+
+function formatPublish(publish?: SchedulerStatus["publish"]): string {
+  if (!publish) return "unknown";
+  if (publish.deployed) return "deployed";
+  if (publish.skipped) return "skipped";
+  if (publish.required) return "required";
+  return "skip";
+}
+
+function formatSignalType(type: string): string {
+  return type.replaceAll("_", "-");
 }
 
 function CountSection({ title, counts }: { title: string; counts: Record<string, number> }) {
