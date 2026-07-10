@@ -1,0 +1,75 @@
+{
+  "dispatchRoot": "~/.codex/dispatch",
+  "stateDir": "logs/dispatch-autopilot",
+  "targetRepo": "/home/lewis/projects/scythe",
+  "targetBranch": "pilot",
+  "pushRemote": "git@github.com:lewismazzei/career-ops.git",
+  "pushBranch": "pilot",
+  "requireAdopted": true,
+  "allowDirtyWorkerCommit": true,
+  "allowDeploy": true,
+  "allowPush": true,
+  "autoCleanupIntegration": true,
+  "codexCommand": "codex",
+  "dispatchCreateScript": "~/.agents/skills/dispatch/scripts/dispatch-create.zsh",
+  "dispatchStateScript": "~/.agents/skills/dispatch/scripts/dispatch-state.zsh",
+  "allowedPaths": [
+    "SCYTHE.md",
+    "CONTEXT.md",
+    "DATA_CONTRACT.md",
+    "package.json",
+    ".gitignore",
+    "config/",
+    "docs/",
+    "modes/",
+    "ops/systemd/",
+    "scythe.mjs",
+    "scythe-*.mjs",
+    "dispatch-autopilot.mjs",
+    "scythe-web/src/",
+    "scythe-web/migrations/",
+    "scythe-web/package.json",
+    "scythe-web/next.config.ts",
+    "scythe-web/tsconfig.json",
+    "scythe-web/wrangler.jsonc",
+    "scythe-web/public/"
+  ],
+  "blockedPaths": [
+    ".env",
+    ".env.local",
+    "data/",
+    "logs/",
+    "reports/",
+    "node_modules/",
+    "scythe-web/.env.local",
+    "scythe-web/.wrangler/",
+    "scythe-web/out/",
+    "scythe-web/.next/"
+  ],
+  "checks": [
+    {
+      "name": "web-typecheck",
+      "command": "npm run scythe:web:typecheck"
+    },
+    {
+      "name": "web-build",
+      "command": "npm run scythe:web:build"
+    }
+  ],
+  "deploySteps": [
+    {
+      "name": "web-deploy",
+      "command": "eval \"$(npm run --silent scythe:env)\" && npm run scythe:web:deploy"
+    }
+  ],
+  "verifySteps": [
+    {
+      "name": "verify-auth",
+      "command": "eval \"$(npm run --silent scythe:env)\" && npm run scythe:verify:auth"
+    },
+    {
+      "name": "verify-browser",
+      "command": "eval \"$(npm run --silent scythe:env)\" && npm run scythe:verify:browser"
+    }
+  ]
+}
