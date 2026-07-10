@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { CandidateItem, SavedItem } from "@/lib/scythe";
 
 type Vote = "up" | "down";
+type QueueActionIcon = "upvote" | "downvote" | "bookmark";
 
 type Judgement = {
   url: string;
@@ -67,6 +68,58 @@ function adjustedScore(candidate: CandidateItem, judgement: Judgement | undefine
   const exact = judgement?.vote === "up" ? 40 : judgement?.vote === "down" ? -90 : 0;
   const saved = judgement?.saved ? 30 : 0;
   return candidate.score + exact + saved + clamp(learned, -20, 20);
+}
+
+function QueueActionSymbol({ icon }: { icon: QueueActionIcon }) {
+  if (icon === "upvote") {
+    return (
+      <svg className="queue-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M12 4 5 12h4v8h6v-8h4L12 4Z" />
+      </svg>
+    );
+  }
+
+  if (icon === "downvote") {
+    return (
+      <svg className="queue-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M12 20 5 12h4V4h6v8h4l-7 8Z" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg className="queue-action-icon bookmark-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M7 4.5C7 3.7 7.7 3 8.5 3h7c.8 0 1.5.7 1.5 1.5V20l-5-3.2L7 20V4.5Z" />
+    </svg>
+  );
+}
+
+function QueueActionButton({
+  active,
+  disabled,
+  icon,
+  label,
+  onClick
+}: {
+  active: boolean;
+  disabled: boolean;
+  icon: QueueActionIcon;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={active ? "active" : ""}
+      aria-label={label}
+      aria-pressed={active}
+      title={label}
+      disabled={disabled}
+      onClick={onClick}
+    >
+      <QueueActionSymbol icon={icon} />
+    </button>
+  );
 }
 
 async function fetchJudgements(savedOnly = false): Promise<Judgement[]> {
@@ -189,9 +242,27 @@ export function CandidateQueue({ items }: { items: CandidateItem[] }) {
             <div className="candidate-side">
               <span className="candidate-score" aria-label={`Score ${Math.round(rank)}`}>{Math.round(rank)}</span>
               <div className="candidate-actions" aria-label={`Judge ${item.company} ${item.opportunity}`}>
-                <button type="button" className={judgement?.vote === "up" ? "active" : ""} disabled={busy === item.url} onClick={() => judgement?.vote === "up" ? void update(item, { vote: null }) : openPrompt(item, { vote: "up" }, "up")}>UP</button>
-                <button type="button" className={judgement?.vote === "down" ? "active" : ""} disabled={busy === item.url} onClick={() => judgement?.vote === "down" ? void update(item, { vote: null }) : openPrompt(item, { vote: "down" }, "down")}>DOWN</button>
-                <button type="button" className={judgement?.saved ? "active" : ""} disabled={busy === item.url} onClick={() => judgement?.saved ? void update(item, { saved: false }) : openPrompt(item, { saved: true }, "save")}>SAVE</button>
+                <QueueActionButton
+                  active={judgement?.vote === "up"}
+                  disabled={busy === item.url}
+                  icon="upvote"
+                  label={judgement?.vote === "up" ? `Remove upvote for ${item.company} ${item.opportunity}` : `Upvote ${item.company} ${item.opportunity}`}
+                  onClick={() => judgement?.vote === "up" ? void update(item, { vote: null }) : openPrompt(item, { vote: "up" }, "up")}
+                />
+                <QueueActionButton
+                  active={judgement?.vote === "down"}
+                  disabled={busy === item.url}
+                  icon="downvote"
+                  label={judgement?.vote === "down" ? `Remove downvote for ${item.company} ${item.opportunity}` : `Downvote ${item.company} ${item.opportunity}`}
+                  onClick={() => judgement?.vote === "down" ? void update(item, { vote: null }) : openPrompt(item, { vote: "down" }, "down")}
+                />
+                <QueueActionButton
+                  active={judgement?.saved ?? false}
+                  disabled={busy === item.url}
+                  icon="bookmark"
+                  label={judgement?.saved ? `Unsave ${item.company} ${item.opportunity}` : `Save ${item.company} ${item.opportunity}`}
+                  onClick={() => judgement?.saved ? void update(item, { saved: false }) : openPrompt(item, { saved: true }, "save")}
+                />
               </div>
             </div>
           </li>
