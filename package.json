@@ -12,6 +12,7 @@
     "scythe:scheduled": "node scythe-scheduled-run.mjs",
     "scythe:scheduled:dry": "node scythe-scheduled-run.mjs --dry-run --skip-deploy",
     "scythe:scheduled:test": "node scythe-scheduled-run.test.mjs",
+    "scythe:best-all:test": "node scythe-best-all.test.mjs",
     "scythe:env": "node scythe-env.mjs exports",
     "scythe:web": "npm --prefix scythe-web run dev -- --hostname 0.0.0.0",
     "scythe:web:build": "npm --prefix scythe-web run build",

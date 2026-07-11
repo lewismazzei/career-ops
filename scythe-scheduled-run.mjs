@@ -120,6 +120,8 @@ function parseScanSummary(output) {
     jobBoardsScanned: intAfter("Job boards scanned"),
     totalJobsFound: intAfter("Total jobs found"),
     duplicatesSkipped: intAfter("Duplicates"),
+    excludedCandidatesVisible: intAfter("Excluded candidates"),
+    excludedCandidatesChanged: intAfter("Excluded changed"),
     newOffersAdded: intAfter("New offers added"),
     expiredDropped: intAfter("Expired \\(verified\\)"),
     noApplyDropped: intAfter("No apply control"),
@@ -204,15 +206,18 @@ function detectScanSignals(output) {
 
 function userFacingDataChanged({ summary, dryRun }) {
   if (dryRun) return false;
-  return (summary.newOffersAdded ?? 0) > 0;
+  return (summary.newOffersAdded ?? 0) > 0 || (summary.excludedCandidatesChanged ?? 0) > 0;
 }
 
 function shouldPublishAfterScan({ summary, scanSignals, dryRun }) {
   const dataChanged = userFacingDataChanged({ summary, dryRun });
   const signalsNeedSurface = !dryRun && scanSignals.length > 0;
 
-  if (dataChanged) {
+  if (!dryRun && (summary.newOffersAdded ?? 0) > 0) {
     return { required: true, reason: "new_offers_added", dataChanged, signalsNeedSurface };
+  }
+  if (!dryRun && (summary.excludedCandidatesChanged ?? 0) > 0) {
+    return { required: true, reason: "all_candidates_changed", dataChanged, signalsNeedSurface };
   }
   if (signalsNeedSurface) {
     return { required: true, reason: "scan_warning_signals", dataChanged, signalsNeedSurface };

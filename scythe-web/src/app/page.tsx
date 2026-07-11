@@ -14,7 +14,7 @@ export default function Home() {
   return (
     <main className="shell">
       <ScytheHeader meta={queueUpdatedAt ? `updated ${formatDate(queueUpdatedAt)}` : undefined} />
-      <CandidateQueue items={data.candidates} />
+      <CandidateQueue bestItems={data.candidates} allItems={data.allCandidates} />
     </main>
   );
 }

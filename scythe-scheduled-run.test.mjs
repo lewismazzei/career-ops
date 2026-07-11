@@ -66,6 +66,24 @@ New offers added:      1
   assert.equal(result.publish.dataChanged, true);
 });
 
+test("excluded all-candidate changes trigger deploy", () => {
+  const result = decisionFor(`
+Portal Scan - 2026-07-10
+Companies scanned:     12
+Total jobs found:      45
+Duplicates:            44 skipped
+Excluded candidates:   1 visible
+Excluded changed:      1
+New offers added:      0
+`);
+
+  assert.equal(result.summary.newOffersAdded, 0);
+  assert.equal(result.summary.excludedCandidatesChanged, 1);
+  assert.equal(result.publish.required, true);
+  assert.equal(result.publish.reason, "all_candidates_changed");
+  assert.equal(result.publish.dataChanged, true);
+});
+
 test("rate-limit and block output records warnings and triggers deploy", () => {
   const result = decisionFor(`
 Provider fetch failed: HTTP 429 Too Many Requests; retry-after: 120

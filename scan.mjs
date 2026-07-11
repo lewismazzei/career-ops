@@ -57,6 +57,7 @@ const PROFILE_PATH = process.env.CAREER_OPS_PROFILE || 'config/profile.yml';
 const SCAN_HISTORY_PATH = 'data/scan-history.tsv';
 const PIPELINE_PATH = 'data/pipeline.md';
 const APPLICATIONS_PATH = 'data/applications.md';
+const EXCLUDED_CANDIDATES_PATH = 'data/scythe-excluded-candidates.json';
 const PROVIDERS_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'providers');
 
 // Ensure required directories exist (fresh setup)
@@ -607,6 +608,124 @@ export function formatScanHistoryRow(offer, date, status = 'added') {
   ].map(sanitizeTsvField).join('\t');
 }
 
+const EXCLUSION_REASON_LABELS = {
+  title: 'title',
+  tier: 'tier',
+  location: 'loc',
+  salary: 'pay',
+  content: 'content',
+  cooldown: 'cooldown',
+};
+
+const EXCLUSION_REASON_PRIORITY = new Map([
+  ['title', 10],
+  ['tier', 20],
+  ['location', 30],
+  ['salary', 40],
+  ['content', 50],
+  ['cooldown', 60],
+]);
+
+const VISIBLE_EXCLUSION_REASONS = new Set(EXCLUSION_REASON_PRIORITY.keys());
+
+function normalizeExclusionReason(value) {
+  const reason = normalizeScanScalar(value || 'excluded')
+    .toLowerCase()
+    .replace(/[^a-z0-9_:-]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  return reason || 'excluded';
+}
+
+function exclusionLabel(reason) {
+  return EXCLUSION_REASON_LABELS[reason] || reason.split(':')[0].replace(/_/g, '-');
+}
+
+function exclusionPriority(reason) {
+  return EXCLUSION_REASON_PRIORITY.get(reason) ?? 999;
+}
+
+function normalizeExcludedCandidate(input) {
+  const job = input?.job && typeof input.job === 'object' ? input.job : input;
+  if (!job || typeof job !== 'object') return null;
+
+  const url = normalizeScanUrl(job.url);
+  if (!url) return null;
+
+  const reason = normalizeExclusionReason(input.exclusionReason || input.reason || input.status);
+  if (!VISIBLE_EXCLUSION_REASONS.has(reason)) return null;
+
+  const detail = normalizeScanScalar(input.exclusionDetail || input.detail || '');
+  const compensation = formatCompensation(job.salary);
+  const note = normalizeScanScalar(job.note || '');
+
+  return {
+    url,
+    source: normalizeScanScalar(job.source || ''),
+    company: normalizeScanScalar(job.company || 'Unknown'),
+    title: normalizeScanScalar(job.title || job.opportunity || 'Untitled'),
+    location: normalizeScanScalar(job.location || ''),
+    reason,
+    reasonLabel: exclusionLabel(reason),
+    ...(detail ? { detail } : {}),
+    ...(compensation ? { compensation } : {}),
+    ...(note ? { note } : {}),
+  };
+}
+
+export function buildExcludedCandidatesArtifact(excludedCandidates) {
+  const normalized = (Array.isArray(excludedCandidates) ? excludedCandidates : [])
+    .map(normalizeExcludedCandidate)
+    .filter(Boolean)
+    .sort((a, b) =>
+      a.url.localeCompare(b.url) ||
+      exclusionPriority(a.reason) - exclusionPriority(b.reason) ||
+      a.company.localeCompare(b.company) ||
+      a.title.localeCompare(b.title)
+    );
+
+  const byUrl = new Map();
+  for (const candidate of normalized) {
+    if (!byUrl.has(candidate.url)) byUrl.set(candidate.url, candidate);
+  }
+
+  return {
+    schemaVersion: 1,
+    generatedBy: 'scan.mjs',
+    candidates: [...byUrl.values()],
+  };
+}
+
+function artifactCandidateCount(text) {
+  if (!text) return 0;
+  try {
+    const parsed = JSON.parse(text);
+    return Array.isArray(parsed?.candidates) ? parsed.candidates.length : 0;
+  } catch {
+    return 0;
+  }
+}
+
+export function writeExcludedCandidatesArtifact(excludedCandidates, artifactPath = EXCLUDED_CANDIDATES_PATH) {
+  const artifact = buildExcludedCandidatesArtifact(excludedCandidates);
+  const next = `${JSON.stringify(artifact, null, 2)}\n`;
+  const previous = existsSync(artifactPath) ? readFileSync(artifactPath, 'utf-8') : '';
+  const changed = previous !== next;
+  const previousCount = artifactCandidateCount(previous);
+  const visibleChanged = changed && (artifact.candidates.length > 0 || previousCount > 0);
+
+  if (changed) {
+    mkdirSync(path.dirname(artifactPath), { recursive: true });
+    writeFileSync(artifactPath, next, 'utf-8');
+  }
+
+  return {
+    path: artifactPath,
+    count: artifact.candidates.length,
+    changed,
+    visibleChanged,
+  };
+}
+
 function pipelineSkeleton() {
   const scytheScan = process.env.SCYTHE_SCAN === '1';
   const command = scytheScan ? '/scythe pipeline' : '/career-ops pipeline';
@@ -958,8 +1077,18 @@ async function main() {
   let totalFilteredContent = 0;
   let totalDupes = 0;
   const newOffers = [];
+  const excludedCandidates = [];
   const errors = [...resolveErrors];
   const emptyTargets = [];
+
+  function recordExcludedCandidate(job, source, exclusionReason, exclusionDetail = '') {
+    excludedCandidates.push({
+      ...job,
+      source,
+      exclusionReason,
+      exclusionDetail,
+    });
+  }
 
   const tasks = targets.map(company => async () => {
     let provider = company._provider;
@@ -998,22 +1127,28 @@ async function main() {
 
         if (!titleFilter(job.title)) {
           totalFilteredTitle++;
+          recordExcludedCandidate(job, sourceName, 'title');
           continue;
         }
-        if (classifyTier && skipTiers.includes(classifyTier(job.title))) {
+        const tier = classifyTier ? classifyTier(job.title) : null;
+        if (tier && skipTiers.includes(tier)) {
           totalFilteredTier++;
+          recordExcludedCandidate(job, sourceName, 'tier', tier);
           continue;
         }
         if (!locationFilter(job.location)) {
           totalFilteredLocation++;
+          recordExcludedCandidate(job, sourceName, 'location');
           continue;
         }
         if (!salaryFilter(job.salary)) {
           totalFilteredSalary++;
+          recordExcludedCandidate(job, sourceName, 'salary');
           continue;
         }
         if (!contentFilter(job.description)) {
           totalFilteredContent++;
+          recordExcludedCandidate(job, sourceName, 'content');
           continue;
         }
         if (seenUrls.has(job.url)) {
@@ -1032,6 +1167,7 @@ async function main() {
             job: { ...job, source: sourceName },
             status: cooldownResult.reason,
           });
+          recordExcludedCandidate(job, sourceName, 'cooldown', cooldownResult.reason);
           continue;
         }
         // Mark as seen to avoid intra-scan dupes
@@ -1126,6 +1262,15 @@ async function main() {
     }
   }
 
+  const excludedArtifact = dryRun
+    ? {
+        path: EXCLUDED_CANDIDATES_PATH,
+        count: buildExcludedCandidatesArtifact(excludedCandidates).candidates.length,
+        changed: false,
+        visibleChanged: false,
+      }
+    : writeExcludedCandidatesArtifact(excludedCandidates);
+
   // 7. Print summary
   console.log(`\n${'━'.repeat(45)}`);
   console.log(`Portal Scan — ${date}`);
@@ -1149,6 +1294,8 @@ async function main() {
   if (historyPolicy.recheckAfterDays != null) {
     console.log(`Recheck eligible:      ${seenUrlState.recheckEligible} old scan-history URL(s)`);
   }
+  console.log(`Excluded candidates:   ${excludedArtifact.count} visible`);
+  console.log(`Excluded changed:      ${excludedArtifact.visibleChanged ? 1 : 0}`);
   if (verify) {
     console.log(`Expired (verified):    ${expiredOffers.length} dropped`);
     console.log(`Rediscovered (moved):  ${migratedOffers.length} migrated`);

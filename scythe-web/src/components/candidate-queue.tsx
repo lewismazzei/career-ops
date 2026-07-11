@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { CandidateItem, SavedItem } from "@/lib/scythe";
 
 type Vote = "up" | "down";
+type QueueView = "best" | "all";
 type QueueActionIcon = "upvote" | "downvote" | "bookmark";
 
 type Judgement = {
@@ -155,12 +156,14 @@ async function postJudgement(candidate: CandidateItem, patch: { vote?: Vote | nu
   return payload.judgement;
 }
 
-export function CandidateQueue({ items }: { items: CandidateItem[] }) {
+export function CandidateQueue({ bestItems, allItems }: { bestItems: CandidateItem[]; allItems: CandidateItem[] }) {
+  const [view, setView] = useState<QueueView>("best");
   const [judgements, setJudgements] = useState<Judgement[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [prompt, setPrompt] = useState<{ candidate: CandidateItem; patch: { vote?: Vote | null; saved?: boolean }; action: "up" | "down" | "save" } | null>(null);
   const [reason, setReason] = useState("");
+  const items = view === "all" ? allItems : bestItems;
 
   useEffect(() => {
     fetchJudgements()
@@ -216,54 +219,85 @@ export function CandidateQueue({ items }: { items: CandidateItem[] }) {
     setPrompt({ candidate, patch, action });
   }
 
-  if (items.length === 0) return <div className="empty">Inbox is empty.</div>;
-
   return (
     <section className="queue">
+      <div className="queue-head">
+        <div className="view-tabs" aria-label="Candidate view">
+          <button
+            type="button"
+            className={view === "best" ? "active" : ""}
+            aria-pressed={view === "best"}
+            aria-label={`Show best candidates (${bestItems.length})`}
+            onClick={() => setView("best")}
+          >
+            BEST
+          </button>
+          <button
+            type="button"
+            className={view === "all" ? "active" : ""}
+            aria-pressed={view === "all"}
+            aria-label={`Show all candidates (${allItems.length})`}
+            onClick={() => setView("all")}
+          >
+            ALL
+          </button>
+        </div>
+      </div>
       {error ? <div className="queue-meta"><span>{error}</span></div> : null}
+      {items.length === 0 ? <div className="empty">Inbox is empty.</div> : null}
       <ul className="candidate-list">
-        {ranked.map(({ item, judgement, rank }) => (
-          <li key={item.url} className={judgement?.vote === "down" ? "candidate muted-candidate" : "candidate"}>
-            <div className="candidate-main">
-              <a href={item.url} target="_blank" rel="noreferrer">
-                <span className="company">{item.company}</span>
-                <span className="role">{item.opportunity}</span>
-              </a>
-              <span className="candidate-meta">
-                {item.source}{item.location ? ` / ${item.location}` : ""}
-              </span>
-              {item.signals.length > 0 ? (
-                <span className="candidate-signals">{item.signals.join(" / ")}</span>
-              ) : null}
-            </div>
-            <div className="candidate-side">
-              <span className="candidate-score" aria-label={`Score ${Math.round(rank)}`}>{Math.round(rank)}</span>
-              <div className="candidate-actions" aria-label={`Judge ${item.company} ${item.opportunity}`}>
-                <QueueActionButton
-                  active={judgement?.vote === "up"}
-                  disabled={busy === item.url}
-                  icon="upvote"
-                  label={judgement?.vote === "up" ? `Remove upvote for ${item.company} ${item.opportunity}` : `Upvote ${item.company} ${item.opportunity}`}
-                  onClick={() => judgement?.vote === "up" ? void update(item, { vote: null }) : openPrompt(item, { vote: "up" }, "up")}
-                />
-                <QueueActionButton
-                  active={judgement?.vote === "down"}
-                  disabled={busy === item.url}
-                  icon="downvote"
-                  label={judgement?.vote === "down" ? `Remove downvote for ${item.company} ${item.opportunity}` : `Downvote ${item.company} ${item.opportunity}`}
-                  onClick={() => judgement?.vote === "down" ? void update(item, { vote: null }) : openPrompt(item, { vote: "down" }, "down")}
-                />
-                <QueueActionButton
-                  active={judgement?.saved ?? false}
-                  disabled={busy === item.url}
-                  icon="bookmark"
-                  label={judgement?.saved ? `Unsave ${item.company} ${item.opportunity}` : `Save ${item.company} ${item.opportunity}`}
-                  onClick={() => judgement?.saved ? void update(item, { saved: false }) : openPrompt(item, { saved: true }, "save")}
-                />
+        {ranked.map(({ item, judgement, rank }) => {
+          const signalParts = [
+            ...(item.excluded && item.exclusionLabel ? [`x:${item.exclusionLabel}`] : []),
+            ...item.signals,
+          ].slice(0, 3);
+          return (
+            <li key={item.url} className={[
+              "candidate",
+              judgement?.vote === "down" ? "muted-candidate" : "",
+              item.excluded ? "excluded-candidate" : "",
+            ].filter(Boolean).join(" ")}>
+              <div className="candidate-main">
+                <a href={item.url} target="_blank" rel="noreferrer">
+                  <span className="company">{item.company}</span>
+                  <span className="role">{item.opportunity}</span>
+                </a>
+                <span className="candidate-meta">
+                  {item.source}{item.location ? ` / ${item.location}` : ""}
+                </span>
+                {signalParts.length > 0 ? (
+                  <span className="candidate-signals">{signalParts.join(" / ")}</span>
+                ) : null}
               </div>
-            </div>
-          </li>
-        ))}
+              <div className="candidate-side">
+                <span className="candidate-score" aria-label={`Score ${Math.round(rank)}`}>{Math.round(rank)}</span>
+                <div className="candidate-actions" aria-label={`Judge ${item.company} ${item.opportunity}`}>
+                  <QueueActionButton
+                    active={judgement?.vote === "up"}
+                    disabled={busy === item.url}
+                    icon="upvote"
+                    label={judgement?.vote === "up" ? `Remove upvote for ${item.company} ${item.opportunity}` : `Upvote ${item.company} ${item.opportunity}`}
+                    onClick={() => judgement?.vote === "up" ? void update(item, { vote: null }) : openPrompt(item, { vote: "up" }, "up")}
+                  />
+                  <QueueActionButton
+                    active={judgement?.vote === "down"}
+                    disabled={busy === item.url}
+                    icon="downvote"
+                    label={judgement?.vote === "down" ? `Remove downvote for ${item.company} ${item.opportunity}` : `Downvote ${item.company} ${item.opportunity}`}
+                    onClick={() => judgement?.vote === "down" ? void update(item, { vote: null }) : openPrompt(item, { vote: "down" }, "down")}
+                  />
+                  <QueueActionButton
+                    active={judgement?.saved ?? false}
+                    disabled={busy === item.url}
+                    icon="bookmark"
+                    label={judgement?.saved ? `Unsave ${item.company} ${item.opportunity}` : `Save ${item.company} ${item.opportunity}`}
+                    onClick={() => judgement?.saved ? void update(item, { saved: false }) : openPrompt(item, { saved: true }, "save")}
+                  />
+                </div>
+              </div>
+            </li>
+          );
+        })}
       </ul>
       {prompt ? (
         <div className="modal-backdrop">

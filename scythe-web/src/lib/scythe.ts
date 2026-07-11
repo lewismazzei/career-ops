@@ -43,11 +43,16 @@ export type CandidateItem = {
   note: string;
   score: number;
   signals: string[];
+  excluded: boolean;
+  exclusionReason?: string;
+  exclusionLabel?: string;
 };
 
 export type DashboardData = {
   opportunities: OpportunityItem[];
   candidates: CandidateItem[];
+  excludedCandidates: CandidateItem[];
+  allCandidates: CandidateItem[];
   active: OpportunityItem[];
   needsInspection: OpportunityItem[];
   saved: SavedItem[];
@@ -74,6 +79,8 @@ export type SchedulerStatus = {
     jobBoardsScanned?: number | null;
     totalJobsFound?: number | null;
     duplicatesSkipped?: number | null;
+    excludedCandidatesVisible?: number | null;
+    excludedCandidatesChanged?: number | null;
     newOffersAdded?: number | null;
     expiredDropped?: number | null;
     noApplyDropped?: number | null;
@@ -113,6 +120,8 @@ function scytheRoot(): string {
 function envData(rel: string): string | null {
   if (rel === "data/opportunities.md") return process.env.SCYTHE_OPPORTUNITIES_MD ?? null;
   if (rel === "data/saved.md") return process.env.SCYTHE_SAVED_MD ?? null;
+  if (rel === "data/pipeline.md") return process.env.SCYTHE_PIPELINE_MD ?? null;
+  if (rel === "data/scythe-excluded-candidates.json") return process.env.SCYTHE_EXCLUDED_CANDIDATES_JSON ?? null;
   return null;
 }
 
@@ -224,13 +233,78 @@ function pendingPipelineCandidates(): CandidateItem[] {
         company,
         opportunity,
         location,
-        note
+        note,
+        excluded: false
       };
       const { score, signals } = scoreCandidate(base);
       return { ...base, score, signals };
     })
     .filter((candidate) => candidate.url && candidate.company && candidate.opportunity)
     .sort((a, b) => b.score - a.score || a.company.localeCompare(b.company));
+}
+
+type ExcludedCandidateArtifact = {
+  schemaVersion?: number;
+  candidates?: Array<{
+    url?: unknown;
+    source?: unknown;
+    company?: unknown;
+    title?: unknown;
+    opportunity?: unknown;
+    location?: unknown;
+    reason?: unknown;
+    reasonLabel?: unknown;
+    detail?: unknown;
+    compensation?: unknown;
+    note?: unknown;
+  }>;
+};
+
+function cleanArtifactText(value: unknown): string {
+  return typeof value === "string"
+    ? value.replace(/\s+/g, " ").trim()
+    : "";
+}
+
+function readExcludedCandidates(bestUrls: Set<string>): CandidateItem[] {
+  const artifact = readJson<ExcludedCandidateArtifact>("data/scythe-excluded-candidates.json");
+  const rows = Array.isArray(artifact?.candidates) ? artifact.candidates : [];
+  const seen = new Set(bestUrls);
+  const candidates: CandidateItem[] = [];
+
+  for (const row of rows) {
+    const url = cleanArtifactText(row.url);
+    if (!url || seen.has(url)) continue;
+    seen.add(url);
+
+    const source = cleanArtifactText(row.source) || sourceFromUrl(url);
+    const company = cleanArtifactText(row.company) || source;
+    const opportunity = cleanArtifactText(row.title) || cleanArtifactText(row.opportunity) || "Untitled";
+    const location = cleanArtifactText(row.location);
+    const reason = cleanArtifactText(row.reason) || "excluded";
+    const label = cleanArtifactText(row.reasonLabel) || reason.replaceAll("_", "-");
+    const details = [
+      cleanArtifactText(row.note),
+      cleanArtifactText(row.compensation),
+      cleanArtifactText(row.detail),
+    ].filter(Boolean);
+    const base = {
+      n: bestUrls.size + candidates.length + 1,
+      url,
+      source,
+      company,
+      opportunity,
+      location,
+      note: details.join(" / "),
+      excluded: true,
+      exclusionReason: reason,
+      exclusionLabel: label,
+    };
+    const { score, signals } = scoreCandidate(base);
+    candidates.push({ ...base, score, signals });
+  }
+
+  return candidates.sort((a, b) => b.score - a.score || a.company.localeCompare(b.company));
 }
 
 function readJson<T>(rel: string): T | null {
@@ -318,9 +392,13 @@ export function readSavedItems(): SavedItem[] {
 export function readDashboardData(): DashboardData {
   const opportunities = readOpportunityItems();
   const scheduler = readJson<SchedulerStatus>("data/scythe-scheduler-status.json");
+  const candidates = pendingPipelineCandidates();
+  const excludedCandidates = readExcludedCandidates(new Set(candidates.map((candidate) => candidate.url)));
   return {
     opportunities,
-    candidates: pendingPipelineCandidates(),
+    candidates,
+    excludedCandidates,
+    allCandidates: [...candidates, ...excludedCandidates],
     active: opportunities.filter(isActive),
     needsInspection: opportunities.filter(needsInspection),
     saved: readSavedItems(),

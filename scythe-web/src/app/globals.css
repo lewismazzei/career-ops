@@ -211,6 +211,48 @@ h1 {
   gap: 8px;
 }
 
+.queue-head {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.view-tabs {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.view-tabs button {
+  border: 0;
+  border-left: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  padding: 7px 10px;
+  text-transform: uppercase;
+}
+
+.view-tabs button:first-child {
+  border-left: 0;
+}
+
+.view-tabs button:hover,
+.view-tabs button.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.view-tabs button:focus-visible {
+  outline: 2px solid var(--accent-soft);
+  outline-offset: 2px;
+}
+
 .queue-meta {
   display: flex;
   justify-content: space-between;
@@ -248,6 +290,11 @@ h1 {
 
 .muted-candidate {
   opacity: 0.55;
+}
+
+.excluded-candidate {
+  border-left: 2px solid var(--warn);
+  padding-left: 8px;
 }
 
 .candidate-main {
